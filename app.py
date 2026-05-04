@@ -172,7 +172,7 @@ def mostrar_panel_resultados():
         ranking
         .sort_values("puntos", ascending=False)
         .head(5)
-        [["usuario", "correctas", "puntos"]]
+        [["usuario", "puntos"]]
     )
 
     col1, col2 = st.columns(2)
