@@ -161,8 +161,19 @@ def mostrar_panel_resultados():
         )
     )
 
-    top_desafios = ranking.sort_values("desafios", ascending=False).head(5)
-    top_puntos = ranking.sort_values("puntos", ascending=False).head(5)
+    top_desafios = (
+        ranking
+        .sort_values("desafios", ascending=False)
+        .head(5)
+        [["usuario", "desafios"]]
+    )
+
+    top_puntos = (
+        ranking
+        .sort_values("puntos", ascending=False)
+        .head(5)
+        [["usuario", "correctas", "puntos"]]
+    )
 
     col1, col2 = st.columns(2)
 
@@ -436,16 +447,3 @@ if st.session_state.pantalla == "retroalimentacion":
 
     st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("Puntos", st.session_state.puntos)
-
-with col2:
-    st.metric("Respuestas", st.session_state.total_respuestas)
-
-with col3:
-    st.metric("Correctas", st.session_state.correctas)
-
-st.markdown('</div>', unsafe_allow_html=True)
