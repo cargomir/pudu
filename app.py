@@ -85,6 +85,9 @@ if "inicio_timer" not in st.session_state:
 
 if "tiempo_agotado" not in st.session_state:
     st.session_state.tiempo_agotado = False
+
+if "timeout_guardado" not in st.session_state:
+    st.session_state.timeout_guardado = False
 # -----------------------------
 # FUNCIONES AUXILIARES
 # -----------------------------
@@ -110,6 +113,66 @@ def guardar_respuesta(tarea, respuesta_usuario, es_correcta):
         registro = nuevo
 
     registro.to_excel(RUTA_REGISTRO, index=False)
+
+def mostrar_panel_resultados():
+    if not os.path.exists(RUTA_REGISTRO):
+        return
+
+    registro = pd.read_excel(RUTA_REGISTRO)
+
+    if registro.empty:
+        return
+
+    usuario = st.session_state.usuario
+    datos_usuario = registro[registro["usuario"] == usuario]
+
+    total = len(datos_usuario)
+    correctas = datos_usuario["es_correcta"].sum()
+    puntos = datos_usuario["puntos_obtenidos"].sum()
+    porcentaje = round((correctas / total) * 100, 1) if total > 0 else 0
+
+    st.markdown("### 📊 Tus resultados")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("Desafíos", total)
+
+    with col2:
+        st.metric("Correctas", int(correctas))
+
+    with col3:
+        st.metric("Precisión", f"{porcentaje}%")
+
+    with col4:
+        st.metric("Puntos", int(puntos))
+
+    st.markdown("---")
+
+    st.markdown("### 🏆 Ranking Pudú")
+
+    ranking = (
+        registro
+        .groupby("usuario", as_index=False)
+        .agg(
+            desafios=("id_tarea", "count"),
+            puntos=("puntos_obtenidos", "sum"),
+            correctas=("es_correcta", "sum")
+        )
+    )
+
+    top_desafios = ranking.sort_values("desafios", ascending=False).head(5)
+    top_puntos = ranking.sort_values("puntos", ascending=False).head(5)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("**Top 5 desafíos**")
+        st.dataframe(top_desafios, use_container_width=True, hide_index=True)
+
+    with col2:
+        st.markdown("**Top 5 puntos**")
+        st.dataframe(top_puntos, use_container_width=True, hide_index=True)
 
 def contador(segundos, pantalla_siguiente):
     st_autorefresh(interval=1000, key=f"refresh_{st.session_state.pantalla}")
@@ -329,6 +392,11 @@ if st.session_state.pantalla == "retroalimentacion":
     correcta = tarea["respuesta_correcta"]
     es_correcta = st.session_state.respuesta == correcta
 
+    if st.session_state.tiempo_agotado and st.session_state.respuesta is None and not st.session_state.timeout_guardado:
+        st.session_state.total_respuestas += 1
+        guardar_respuesta(tarea, None, False)
+        st.session_state.timeout_guardado = True
+
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown('<div class="card-header">Retroalimentación</div>', unsafe_allow_html=True)
 
@@ -354,11 +422,14 @@ if st.session_state.pantalla == "retroalimentacion":
         )
         st.info(tarea["retroalimentacion_incorrecta"])
 
+    mostrar_panel_resultados()
+
     if st.button("Siguiente misión", use_container_width=True):
         st.session_state.idx = (st.session_state.idx + 1) % len(df)
         st.session_state.respondido = False
         st.session_state.respuesta = None
         st.session_state.tiempo_agotado = False
+        st.session_state.timeout_guardado = False
         st.session_state.inicio_timer = None
         st.session_state.pantalla = "instrucciones"
         st.rerun()
