@@ -261,7 +261,8 @@ if st.session_state.pantalla == "instrucciones":
     mostrar_personaje("instrucciones.jpg", ancho=140)
 
     st.write(f"Hola **{st.session_state.usuario}**. Pudú te acompañará en una misión breve.")
-    st.write("Primero observarás o leerás un estímulo. Luego responderás una pregunta.")
+    if pd.notna(tarea["instruccion"]) and str(tarea["instruccion"]).strip() != "":
+        st.info(str(tarea["instruccion"]).strip())
     st.write("Recuerda: lo importante es practicar un poco cada día.")
 
     st.info(
@@ -409,12 +410,11 @@ if st.session_state.pantalla == "retroalimentacion":
         st.session_state.timeout_guardado = True
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown('<div class="card-header">Retroalimentación</div>', unsafe_allow_html=True)
 
     if es_correcta:
         mostrar_personaje("correcta.jpg", ancho=150)
         st.markdown(
-            '<div class="ok">¡Correcto!</div>',
+            '<div class="ok"> </div>',
             unsafe_allow_html=True
         )
         st.info(tarea["retroalimentacion_correcta"])
