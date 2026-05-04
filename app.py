@@ -265,10 +265,18 @@ if st.session_state.pantalla == "instrucciones":
         st.info(str(tarea["instruccion"]).strip())
     st.write("Recuerda: lo importante es practicar un poco cada día.")
 
-    st.info(
-        f"Tendrás **{int(tarea['tiempo_estimulo'])} segundos** para revisar el estímulo "
-        f"y **{int(tarea['tiempo_pregunta'])} segundos** para responder."
-    )
+    hay_imagen = pd.notna(tarea["estimulo_imagen"]) and str(tarea["estimulo_imagen"]).strip() != ""
+    hay_texto = pd.notna(tarea["estimulo_texto"]) and str(tarea["estimulo_texto"]).strip() != ""
+
+    if hay_imagen or hay_texto:
+        st.info(
+            f"Tendrás **{int(tarea['tiempo_estimulo'])} segundos** para revisar el estímulo "
+            f"y **{int(tarea['tiempo_pregunta'])} segundos** para responder."
+        )
+    else:
+        st.info(
+            f"Responderás directamente la pregunta y tendrás **{int(tarea['tiempo_pregunta'])} segundos** para hacerlo."
+        )
 
     if st.button("¡Vamos!", use_container_width=True):
 
