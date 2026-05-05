@@ -300,7 +300,7 @@ if st.session_state.pantalla == "instrucciones":
     st.markdown('<div class="card">', unsafe_allow_html=True)
     mostrar_personaje("instrucciones.jpg", ancho=140)
 
-    st.write(f"Hola **{st.session_state.usuario}**. Pudú te acompañará en una misión breve.")
+    st.write(f"Hola **{st.session_state.usuario}**. Pudú te ha asignado una misión.")
     if pd.notna(tarea["instruccion"]) and str(tarea["instruccion"]).strip() != "":
         st.info(str(tarea["instruccion"]).strip())
 
