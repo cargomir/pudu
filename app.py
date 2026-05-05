@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
+import random
 
 st.set_page_config(page_title="Pudú", page_icon="", layout="centered")
 
@@ -23,17 +24,34 @@ RUTA_PERSONAJE = os.path.join("assets", "imagenes", "personaje")
 
 st.markdown("""
 <style>
-/* Oculta header y menú Streamlit */
-#MainMenu {visibility: hidden;}
-header {visibility: hidden;}
-footer {visibility: hidden;}
 
-/* Quita padding lateral */
-.block-container {
-    padding-top: 0rem;
-    padding-bottom: 0rem;
-    padding-left: 0rem;
-    padding-right: 0rem;
+/* BOTONES MÁS VISIBLES */
+div.stButton > button {
+    background-color: #2E7D32;   /* verde fuerte */
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    width: 100%;
+}
+
+/* HOVER (cuando pasas el mouse) */
+div.stButton > button:hover {
+    background-color: #1B5E20;
+    color: white;
+}
+
+/* BOTÓN ACTIVO (cuando haces click) */
+div.stButton > button:active {
+    background-color: #145A1F;
+}
+
+/* RADIO (opciones A, B, C, D) más grandes */
+div[role="radiogroup"] label {
+    font-size: 16px;
+    padding: 8px;
 }
 
 </style>
@@ -49,45 +67,6 @@ def cargar():
 
 df = cargar()
 
-# -----------------------------
-# SESSION STATE
-# -----------------------------
-
-if "idx" not in st.session_state:
-    st.session_state.idx = 0
-
-if "respondido" not in st.session_state:
-    st.session_state.respondido = False
-
-if "respuesta" not in st.session_state:
-    st.session_state.respuesta = None
-
-if "puntos" not in st.session_state:
-    st.session_state.puntos = 0
-
-if "usuario" not in st.session_state:
-    st.session_state.usuario = None
-
-if "inicio_app" not in st.session_state:
-    st.session_state.inicio_app = False
-
-if "correctas" not in st.session_state:
-    st.session_state.correctas = 0
-
-if "total_respuestas" not in st.session_state:
-    st.session_state.total_respuestas = 0
-
-if "pantalla" not in st.session_state:
-    st.session_state.pantalla = "bienvenida"
-
-if "inicio_timer" not in st.session_state:
-    st.session_state.inicio_timer = None
-
-if "tiempo_agotado" not in st.session_state:
-    st.session_state.tiempo_agotado = False
-
-if "timeout_guardado" not in st.session_state:
-    st.session_state.timeout_guardado = False
 # -----------------------------
 # FUNCIONES AUXILIARES
 # -----------------------------
@@ -210,6 +189,67 @@ def mostrar_personaje(nombre_archivo, ancho=120):
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
             st.image(ruta, width=ancho)
+
+def seleccionar_item_azar():
+    total_items = len(df)
+
+    disponibles = [
+        i for i in range(total_items)
+        if i not in st.session_state.items_usados
+    ]
+
+    if len(disponibles) == 0:
+        st.session_state.items_usados = []
+        disponibles = list(range(total_items))
+
+    idx = random.choice(disponibles)
+    st.session_state.items_usados.append(idx)
+
+    return idx
+
+# -----------------------------
+# SESSION STATE
+# -----------------------------
+
+if "idx" not in st.session_state:
+    st.session_state.idx = seleccionar_item_azar()
+
+if "respondido" not in st.session_state:
+    st.session_state.respondido = False
+
+if "respuesta" not in st.session_state:
+    st.session_state.respuesta = None
+
+if "puntos" not in st.session_state:
+    st.session_state.puntos = 0
+
+if "usuario" not in st.session_state:
+    st.session_state.usuario = None
+
+if "inicio_app" not in st.session_state:
+    st.session_state.inicio_app = False
+
+if "correctas" not in st.session_state:
+    st.session_state.correctas = 0
+
+if "total_respuestas" not in st.session_state:
+    st.session_state.total_respuestas = 0
+
+if "pantalla" not in st.session_state:
+    st.session_state.pantalla = "bienvenida"
+
+if "inicio_timer" not in st.session_state:
+    st.session_state.inicio_timer = None
+
+if "tiempo_agotado" not in st.session_state:
+    st.session_state.tiempo_agotado = False
+
+if "timeout_guardado" not in st.session_state:
+    st.session_state.timeout_guardado = False
+
+if "items_usados" not in st.session_state:
+    st.session_state.items_usados = []
+
 # -----------------------------
 # PANTALLA DE BIENVENIDA
 # -----------------------------
@@ -313,17 +353,21 @@ if st.session_state.pantalla == "estimulo":
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
 
+    # Mostrar imagen solo si existe estímulo de imagen
     if hay_imagen:
         nombre_imagen = str(tarea["estimulo_imagen"]).strip()
         ruta_imagen = os.path.join(RUTA_IMG, nombre_imagen)
 
-    if os.path.exists(ruta_imagen):
-        col1, col2, col3 = st.columns([1,2,1])
-        with col2:
-            st.image(ruta_imagen, width=300)
+        if os.path.exists(ruta_imagen):
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                st.image(ruta_imagen, width=300)
+        else:
+            st.warning(f"No se encontró la imagen: {nombre_imagen}")
 
+    # Mostrar texto solo si existe estímulo de texto
     if hay_texto:
-        st.write(tarea["estimulo_texto"])
+        st.write(str(tarea["estimulo_texto"]).strip())
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -444,7 +488,8 @@ if st.session_state.pantalla == "retroalimentacion":
     mostrar_panel_resultados()
 
     if st.button("Siguiente misión", use_container_width=True):
-        st.session_state.idx = (st.session_state.idx + 1) % len(df)
+        st.session_state.idx = seleccionar_item_azar()
+
         st.session_state.respondido = False
         st.session_state.respuesta = None
         st.session_state.tiempo_agotado = False
