@@ -303,14 +303,13 @@ if st.session_state.pantalla == "instrucciones":
     st.write(f"Hola **{st.session_state.usuario}**. Pudú te acompañará en una misión breve.")
     if pd.notna(tarea["instruccion"]) and str(tarea["instruccion"]).strip() != "":
         st.info(str(tarea["instruccion"]).strip())
-    st.write("Recuerda: lo importante es practicar un poco cada día.")
 
     hay_imagen = pd.notna(tarea["estimulo_imagen"]) and str(tarea["estimulo_imagen"]).strip() != ""
     hay_texto = pd.notna(tarea["estimulo_texto"]) and str(tarea["estimulo_texto"]).strip() != ""
 
     if hay_imagen or hay_texto:
         st.info(
-            f"Tendrás **{int(tarea['tiempo_estimulo'])} segundos** para revisar el estímulo "
+            f"Tendrás **{int(tarea['tiempo_estimulo'])} segundos** para estudiar "
             f"y **{int(tarea['tiempo_pregunta'])} segundos** para responder."
         )
     else:
