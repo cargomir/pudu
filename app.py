@@ -4,7 +4,7 @@ import os
 import time
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
-import random
+import random 
 
 st.set_page_config(page_title="Pudú", page_icon="", layout="centered")
 
@@ -191,6 +191,10 @@ def mostrar_personaje(nombre_archivo, ancho=120):
             st.image(ruta, width=ancho)
 
 def seleccionar_item_azar():
+
+    if "items_usados" not in st.session_state:
+        st.session_state.items_usados = []
+
     total_items = len(df)
 
     disponibles = [
@@ -206,11 +210,10 @@ def seleccionar_item_azar():
     st.session_state.items_usados.append(idx)
 
     return idx
-
 # -----------------------------
 # SESSION STATE
 # -----------------------------
-
+    
 if "idx" not in st.session_state:
     st.session_state.idx = seleccionar_item_azar()
 
@@ -246,9 +249,6 @@ if "tiempo_agotado" not in st.session_state:
 
 if "timeout_guardado" not in st.session_state:
     st.session_state.timeout_guardado = False
-
-if "items_usados" not in st.session_state:
-    st.session_state.items_usados = []
 
 # -----------------------------
 # PANTALLA DE BIENVENIDA
