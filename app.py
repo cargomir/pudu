@@ -222,6 +222,17 @@ def seleccionar_estimulo_azar():
 
     return estimulo, preguntas_estimulo
 
+def obtener_formato_pregunta(pregunta):
+    if "formato_pregunta" not in pregunta.index:
+        return "opción múltiple"
+
+    formato = str(pregunta["formato_pregunta"]).strip().lower()
+
+    if formato in ["numerico", "numérico", "numero", "número"]:
+        return "numerico"
+    else:
+        return "opción múltiple"
+
 # -----------------------------
 # SESSION STATE
 # -----------------------------
@@ -415,6 +426,7 @@ if st.session_state.pantalla == "pregunta":
 
     estimulo = st.session_state.estimulo_actual
     pregunta = st.session_state.pregunta_actual
+    formato = obtener_formato_pregunta(pregunta)
 
     st.markdown('<div class="card">', unsafe_allow_html=True)
     mostrar_personaje("pregunta.jpg", ancho=140)
@@ -428,28 +440,52 @@ if st.session_state.pantalla == "pregunta":
         unsafe_allow_html=True
     )
 
-    opciones = {
-        "A": pregunta["opcion_a"],
-        "B": pregunta["opcion_b"],
-        "C": pregunta["opcion_c"],
-        "D": pregunta["opcion_d"],
-    }
+    if formato == "numerico":
 
-    respuesta = st.radio(
-        "Elige una opción:",
-        options=list(opciones.keys()),
-        format_func=lambda x: f"{x}. {opciones[x]}",
-        index=None,
-        key=f"radio_{pregunta['id_pregunta']}"
-    )
+        respuesta = st.text_input(
+            "Escribe tu respuesta:",
+            key=f"numerico_{pregunta['id_pregunta']}"
+        )
+
+    else:
+
+        opciones = {
+            "A": pregunta["opcion_a"],
+            "B": pregunta["opcion_b"],
+            "C": pregunta["opcion_c"],
+            "D": pregunta["opcion_d"],
+        }
+
+        respuesta = st.radio(
+            "Elige una opción:",
+            options=list(opciones.keys()),
+            format_func=lambda x: f"{x}. {opciones[x]}",
+            index=None,
+            key=f"radio_{pregunta['id_pregunta']}"
+        )
 
     if st.button("Responder", width='stretch'):
 
-        if respuesta is None:
-            st.warning("Debes seleccionar una alternativa antes de responder.")
+        if str(respuesta).strip() == "":
+            if formato == "numerico":
+                st.warning("Debes escribir una respuesta antes de responder.")
+            else:
+                st.warning("Debes seleccionar una alternativa antes de responder.")
             st.stop()
 
-        es_correcta = respuesta == str(pregunta["respuesta_correcta"]).strip()
+        if formato == "numerico":
+            try:
+                respuesta_usuario = float(str(respuesta).replace(",", "."))
+                respuesta_correcta = float(pregunta["respuesta_correcta"])
+                es_correcta = respuesta_usuario == respuesta_correcta
+            except:
+                es_correcta = False
+
+            respuesta = respuesta_usuario
+
+        else:
+            respuesta = str(respuesta).strip()
+            es_correcta = respuesta == str(pregunta["respuesta_correcta"]).strip()
 
         st.session_state.respuesta = respuesta
         st.session_state.respondido = True
@@ -483,8 +519,16 @@ if st.session_state.pantalla == "retroalimentacion":
 
     estimulo = st.session_state.estimulo_actual
     pregunta = st.session_state.pregunta_actual
+    formato = obtener_formato_pregunta(pregunta)
     correcta = str(pregunta["respuesta_correcta"]).strip()
-    es_correcta = st.session_state.respuesta == correcta
+
+    if formato == "numerico" and st.session_state.respuesta is not None:
+        try:
+            es_correcta = float(st.session_state.respuesta) == float(pregunta["respuesta_correcta"])
+        except:
+            es_correcta = False
+    else:
+        es_correcta = str(st.session_state.respuesta).strip() == correcta
 
     if st.session_state.tiempo_agotado and st.session_state.respuesta is None and not st.session_state.timeout_guardado:
         st.session_state.total_respuestas += 1
@@ -504,10 +548,16 @@ if st.session_state.pantalla == "retroalimentacion":
     else:
         mostrar_personaje("incorrecta.jpg", ancho=150)
 
-        if st.session_state.respuesta is None:
-            mensaje = f"Se acabó el tiempo. La respuesta correcta era la opción {correcta}."
+        if formato == "numerico":
+            if st.session_state.respuesta is None:
+                mensaje = f"Se acabó el tiempo. La respuesta correcta era {correcta}."
+            else:
+                mensaje = f"Respuesta incorrecta. La respuesta correcta era {correcta}."
         else:
-            mensaje = f"Respuesta incorrecta. La respuesta correcta era la opción {correcta}."
+            if st.session_state.respuesta is None:
+                mensaje = f"Se acabó el tiempo. La respuesta correcta era la opción {correcta}."
+            else:
+                mensaje = f"Respuesta incorrecta. La respuesta correcta era la opción {correcta}."
 
         st.markdown(
             f'<div class="bad">{mensaje}</div>',
